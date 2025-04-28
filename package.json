@@ -1,0 +1,21 @@
+{
+  "name": "computer-info",
+  "version": "1.0.0",
+  "description": "to stop server you do ctrl + c\r and to download package.json file you do npm init -y",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RainerTA-24A/computer-info.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RainerTA-24A/computer-info/issues"
+  },
+  "homepage": "https://github.com/RainerTA-24A/computer-info#readme"
+}
