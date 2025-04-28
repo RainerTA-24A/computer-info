@@ -1,9 +1,8 @@
-// Server-side Node.js code (app.js)
-
 const http = require('http');
 const os = require('os');
 const process = require('process');
 const url = require('url');
+const axios = require('axios');
 
 // Format bytes
 function formatBytes(bytes, decimal = 2) {
@@ -28,14 +27,14 @@ const getCpuInfo = () => ({
   model: os.cpus()[0].model,
   cores: os.cpus().length,
   architecture: os.arch(),
-  loadAvg: os.loadavg()
+  loadAvg: os.loadavg(),
 });
 
 // Memory Info
 const getMemoryInfo = () => ({
   total: formatBytes(os.totalmem()),
   free: formatBytes(os.freemem()),
-  usage: ((1 - os.freemem() / os.totalmem()) * 100).toFixed(2) + '%'
+  usage: ((1 - os.freemem() / os.totalmem()) * 100).toFixed(2) + '%',
 });
 
 // OS Info
@@ -44,14 +43,11 @@ const getOsInfo = () => ({
   type: os.type(),
   release: os.release(),
   hostname: os.hostname(),
-  uptime: formatTime(os.uptime())
+  uptime: formatTime(os.uptime()),
 });
 
 // User Info
 const getUserInfo = () => os.userInfo();
-
-// Network Info
-const getNetworkInfo = () => os.networkInterfaces();
 
 // Process Info
 const getProcessInfo = () => ({
@@ -63,159 +59,122 @@ const getProcessInfo = () => ({
     rss: formatBytes(process.memoryUsage().rss),
     heapTotal: formatBytes(process.memoryUsage().heapTotal),
     heapUsed: formatBytes(process.memoryUsage().heapUsed),
-    external: formatBytes(process.memoryUsage().external)
+    external: formatBytes(process.memoryUsage().external),
   },
   env: {
-    NODE_ENV: process.env.NODE_ENV || 'Not set'
-  }
+    NODE_ENV: process.env.NODE_ENV || 'Not set',
+  },
 });
 
+// Network Info
+const getNetworkInfo = () => os.networkInterfaces();
+
+// Function to get geolocation info
+async function getGeolocation() {
+  try {
+    const response = await axios.get('https://ipinfo.io/json'); // Fetch geolocation data
+    const { city, region, country, loc } = response.data;
+
+    return {
+      location: `${city}, ${region}, ${country}`,
+      coordinates: loc, // This gives the "lat,long" format
+    };
+  } catch (error) {
+    console.error("Error fetching geolocation data:", error);
+    return { location: "Location not found", coordinates: "Not available" };
+  }
+}
+
 // Build HTML page
-function buildHtmlPage(data) {
+function buildHtmlPage(data, geoData) {
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System Information</title>
-  <style>
-    body { font-family: Arial, sans-serif; background-color: #121212; color: #f0f0f0; margin: 20px; }
-    h1 { color: #00bfff; }
-    .section { background: #1e1e1e; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
-    pre { background: #2e2e2e; padding: 10px; border-radius: 5px; overflow-x: auto; }
-  </style>
+<meta charset="UTF-8">
+<title>SysView Dashboard</title>
+<style>
+  body { font-family: Arial, sans-serif; background-color: #121212; color: #f0f0f0; margin: 20px; }
+  h1 { color: #00bfff; }
+  .section { background: #1e1e1e; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+  pre { background: #2e2e2e; padding: 10px; border-radius: 5px; overflow-x: auto; }
+</style>
 </head>
 <body>
-  <h1>System Information</h1>
+<h1>SysView - System Information</h1>
 
-  <div class="section">
-    <h2>CPU Info</h2>
-    <pre>${JSON.stringify(data.cpu, null, 2)}</pre>
-  </div>
+<div class="section">
+  <h2>CPU Info</h2>
+  <pre>${JSON.stringify(data.cpu, null, 2)}</pre>
+</div>
 
-  <div class="section">
-    <h2>Memory Info</h2>
-    <pre>${JSON.stringify(data.memory, null, 2)}</pre>
-  </div>
+<div class="section">
+  <h2>Memory Info</h2>
+  <pre>${JSON.stringify(data.memory, null, 2)}</pre>
+</div>
 
-  <div class="section">
-    <h2>OS Info</h2>
-    <pre>${JSON.stringify(data.os, null, 2)}</pre>
-  </div>
+<div class="section">
+  <h2>OS Info</h2>
+  <pre>${JSON.stringify(data.os, null, 2)}</pre>
+</div>
 
-  <div class="section">
-    <h2>User Info</h2>
-    <pre>${JSON.stringify(data.user, null, 2)}</pre>
-  </div>
+<div class="section">
+  <h2>User Info</h2>
+  <pre>${JSON.stringify(data.user, null, 2)}</pre>
+</div>
 
-  <div class="section">
-    <h2>Process Info</h2>
-    <pre>${JSON.stringify(data.process, null, 2)}</pre>
-  </div>
+<div class="section">
+  <h2>Process Info</h2>
+  <pre>${JSON.stringify(data.process, null, 2)}</pre>
+</div>
 
-  <div class="section">
-    <h2>Network Info</h2>
-    <pre>${JSON.stringify(data.network, null, 2)}</pre>
-  </div>
+<div class="section">
+  <h2>Network Info</h2>
+  <pre>${JSON.stringify(data.network, null, 2)}</pre>
+</div>
 
-  <div class="section">
-    <h2>Browser Info</h2>
-    <pre id="browser-info"></pre>
-  </div>
+<div class="section">
+  <h2>Geolocation Info</h2>
+  <pre>Location: ${geoData.location}</pre>
+  <pre>Coordinates: ${geoData.coordinates}</pre>
+</div>
 
-  <div class="section">
-    <h2>Screen Info</h2>
-    <pre id="screen-info"></pre>
-  </div>
-
-  <div class="section">
-    <h2>Geolocation Info</h2>
-    <pre id="geo-info">Waiting for user permission...</pre>
-  </div>
-
-  <div class="section">
-    <h2>Battery Info</h2>
-    <pre id="battery-info">Fetching battery info...</pre>
-  </div>
-
-  <script>
-    // Browser Info
-    const browserInfo = {
-      userAgent: navigator.userAgent,
-      platform: navigator.platform,
-      language: navigator.language
-    };
-
-    // Screen Info
-    const screenInfo = {
-      width: screen.width,
-      height: screen.height,
-      colorDepth: screen.colorDepth
-    };
-
-    // Display Browser and Screen Info
-    document.getElementById('browser-info').textContent = JSON.stringify(browserInfo, null, 2);
-    document.getElementById('screen-info').textContent = JSON.stringify(screenInfo, null, 2);
-
-    // Battery Info
-    navigator.getBattery().then((battery) => {
-      const batteryInfo = {
-        level: battery.level * 100 + '%',
-        charging: battery.charging ? 'Yes' : 'No'
-      };
-      document.getElementById('battery-info').textContent = JSON.stringify(batteryInfo, null, 2);
-    }).catch(() => {
-      document.getElementById('battery-info').textContent = 'Battery info not available';
-    });
-
-    // Geolocation Info
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const geoInfo = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        };
-        document.getElementById('geo-info').textContent = JSON.stringify(geoInfo, null, 2);
-      }, (error) => {
-        document.getElementById('geo-info').textContent = 'Geolocation access denied or unavailable';
-      });
-    } else {
-      document.getElementById('geo-info').textContent = 'Geolocation not supported';
-    }
-  </script>
 </body>
 </html>
   `;
 }
 
 // Create server
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
 
   if (parsedUrl.pathname === '/') {
-    // Serve HTML dashboard
+    // Fetch geolocation and system data
+    const geoData = await getGeolocation();
     const data = {
       cpu: getCpuInfo(),
       memory: getMemoryInfo(),
       os: getOsInfo(),
       user: getUserInfo(),
       process: getProcessInfo(),
-      network: getNetworkInfo()
+      network: getNetworkInfo(),
     };
 
+    // Serve HTML dashboard
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(buildHtmlPage(data));
+    res.end(buildHtmlPage(data, geoData));
 
   } else if (parsedUrl.pathname === '/api') {
     // Serve raw JSON if needed
+    const geoData = await getGeolocation();
     const data = {
       cpu: getCpuInfo(),
       memory: getMemoryInfo(),
       os: getOsInfo(),
       user: getUserInfo(),
       process: getProcessInfo(),
-      network: getNetworkInfo()
+      network: getNetworkInfo(),
+      geolocation: geoData,
     };
 
     res.writeHead(200, { 'Content-Type': 'application/json' });

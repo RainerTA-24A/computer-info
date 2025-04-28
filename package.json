@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/RainerTA-24A/computer-info/issues"
   },
-  "homepage": "https://github.com/RainerTA-24A/computer-info#readme"
+  "homepage": "https://github.com/RainerTA-24A/computer-info#readme",
+  "dependencies": {
+    "axios": "^1.9.0"
+  }
 }
