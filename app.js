@@ -1,3 +1,5 @@
+// Server-side Node.js code (app.js)
+
 const http = require('http');
 const os = require('os');
 const process = require('process');
@@ -74,48 +76,114 @@ function buildHtmlPage(data) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>SysView Dashboard</title>
-<style>
-  body { font-family: Arial, sans-serif; background-color: #121212; color: #f0f0f0; margin: 20px; }
-  h1 { color: #00bfff; }
-  .section { background: #1e1e1e; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
-  pre { background: #2e2e2e; padding: 10px; border-radius: 5px; overflow-x: auto; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Information</title>
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #121212; color: #f0f0f0; margin: 20px; }
+    h1 { color: #00bfff; }
+    .section { background: #1e1e1e; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+    pre { background: #2e2e2e; padding: 10px; border-radius: 5px; overflow-x: auto; }
+  </style>
 </head>
 <body>
-<h1>SysView - System Information</h1>
+  <h1>System Information</h1>
 
-<div class="section">
-  <h2>CPU Info</h2>
-  <pre>${JSON.stringify(data.cpu, null, 2)}</pre>
-</div>
+  <div class="section">
+    <h2>CPU Info</h2>
+    <pre>${JSON.stringify(data.cpu, null, 2)}</pre>
+  </div>
 
-<div class="section">
-  <h2>Memory Info</h2>
-  <pre>${JSON.stringify(data.memory, null, 2)}</pre>
-</div>
+  <div class="section">
+    <h2>Memory Info</h2>
+    <pre>${JSON.stringify(data.memory, null, 2)}</pre>
+  </div>
 
-<div class="section">
-  <h2>OS Info</h2>
-  <pre>${JSON.stringify(data.os, null, 2)}</pre>
-</div>
+  <div class="section">
+    <h2>OS Info</h2>
+    <pre>${JSON.stringify(data.os, null, 2)}</pre>
+  </div>
 
-<div class="section">
-  <h2>User Info</h2>
-  <pre>${JSON.stringify(data.user, null, 2)}</pre>
-</div>
+  <div class="section">
+    <h2>User Info</h2>
+    <pre>${JSON.stringify(data.user, null, 2)}</pre>
+  </div>
 
-<div class="section">
-  <h2>Process Info</h2>
-  <pre>${JSON.stringify(data.process, null, 2)}</pre>
-</div>
+  <div class="section">
+    <h2>Process Info</h2>
+    <pre>${JSON.stringify(data.process, null, 2)}</pre>
+  </div>
 
-<div class="section">
-  <h2>Network Info</h2>
-  <pre>${JSON.stringify(data.network, null, 2)}</pre>
-</div>
+  <div class="section">
+    <h2>Network Info</h2>
+    <pre>${JSON.stringify(data.network, null, 2)}</pre>
+  </div>
 
+  <div class="section">
+    <h2>Browser Info</h2>
+    <pre id="browser-info"></pre>
+  </div>
+
+  <div class="section">
+    <h2>Screen Info</h2>
+    <pre id="screen-info"></pre>
+  </div>
+
+  <div class="section">
+    <h2>Geolocation Info</h2>
+    <pre id="geo-info">Waiting for user permission...</pre>
+  </div>
+
+  <div class="section">
+    <h2>Battery Info</h2>
+    <pre id="battery-info">Fetching battery info...</pre>
+  </div>
+
+  <script>
+    // Browser Info
+    const browserInfo = {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language
+    };
+
+    // Screen Info
+    const screenInfo = {
+      width: screen.width,
+      height: screen.height,
+      colorDepth: screen.colorDepth
+    };
+
+    // Display Browser and Screen Info
+    document.getElementById('browser-info').textContent = JSON.stringify(browserInfo, null, 2);
+    document.getElementById('screen-info').textContent = JSON.stringify(screenInfo, null, 2);
+
+    // Battery Info
+    navigator.getBattery().then((battery) => {
+      const batteryInfo = {
+        level: battery.level * 100 + '%',
+        charging: battery.charging ? 'Yes' : 'No'
+      };
+      document.getElementById('battery-info').textContent = JSON.stringify(batteryInfo, null, 2);
+    }).catch(() => {
+      document.getElementById('battery-info').textContent = 'Battery info not available';
+    });
+
+    // Geolocation Info
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const geoInfo = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        document.getElementById('geo-info').textContent = JSON.stringify(geoInfo, null, 2);
+      }, (error) => {
+        document.getElementById('geo-info').textContent = 'Geolocation access denied or unavailable';
+      });
+    } else {
+      document.getElementById('geo-info').textContent = 'Geolocation not supported';
+    }
+  </script>
 </body>
 </html>
   `;

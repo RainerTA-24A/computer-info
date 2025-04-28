@@ -1,7 +1,7 @@
 {
   "name": "computer-info",
   "version": "1.0.0",
-  "description": "to stop server you do ctrl + c\r and to download package.json file you do npm init -y",
+  "description": "what da hell",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
